@@ -231,9 +231,12 @@ void loop() {
       }
       display.print(GPS.month, DEC);
       display.print("/");
-      if (tzhour >= 20 || tzhour == 0) {
+      if (tzhour >= 20) {
         tzday = GPS.day - 1;
       }
+      else {tzday = GPS.day;
+      }
+      
       if (tzday < 10) {
         display.print("0");
       }
@@ -354,8 +357,10 @@ void loop() {
     }
     display.print(GPS.month, DEC);
     display.print("/");
-   if (tzhour >= 20 || tzhour == 0) {
+   if (tzhour >= 20) {
         tzday = GPS.day - 1;
+      }
+      else {tzday = GPS.day;
       }
       if (tzday < 10) {
         display.print("0");
