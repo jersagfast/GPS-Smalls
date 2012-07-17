@@ -38,9 +38,15 @@ int mid = A3;
 int right = A4;
 int power = 0;
 int tzhour;
+int tzday;
 int fixflag = 0;
+int timezone = 5; // enter the time zone! (EST = 5);
+int dst = 1; // Is it daylight savings time? 0 for no, 1 for yes.
 
 void setup() {
+  if (dst == 1) {
+    timezone--;
+  }
   pinMode(13, OUTPUT);
   pinMode(A0, OUTPUT);
   digitalWrite(A0, HIGH);
@@ -141,7 +147,7 @@ void loop() {
       display.setCursor(0,8);
       display.print("Sleep Mode");
       display.display();
-      delay(1500);
+      delay(1000);
       return;
     }
     display.clearDisplay();
@@ -198,11 +204,11 @@ void loop() {
       display.fillRect(0, 0, 127, 8, BLACK);
       display.setCursor(0, 0);
       display.setTextSize(1);
-      if (GPS.hour >= 0 && GPS.hour < 4) {
+      if (GPS.hour >= 0 && GPS.hour < timezone) {
         tzhour = GPS.hour + 20;
       }
       else {
-        tzhour = GPS.hour - 4;
+        tzhour = GPS.hour - timezone;
       }
       if (tzhour < 10) {
         display.print("0");
@@ -225,10 +231,13 @@ void loop() {
       }
       display.print(GPS.month, DEC);
       display.print("/");
-      if (GPS.day < 10) {
+      if (tzhour >= 20 || tzhour == 0) {
+        tzday = GPS.day - 1;
+      }
+      if (tzday < 10) {
         display.print("0");
       }
-      display.print(GPS.day, DEC);
+      display.print(tzday, DEC);
       display.print("/");
       display.print("20");
       display.print(GPS.year, DEC);
@@ -297,11 +306,11 @@ void loop() {
     display.setTextSize(4);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
-    if (GPS.hour >= 0 && GPS.hour < 4) {
+    if (GPS.hour >= 0 && GPS.hour < timezone) {
       tzhour = GPS.hour + 20;
     }
     else {
-      tzhour = GPS.hour - 4;
+      tzhour = GPS.hour - timezone;
     }
     if (tzhour < 10) {
       display.print("0");
@@ -319,11 +328,11 @@ void loop() {
     display.setTextSize(2);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
-    if (GPS.hour >= 0 && GPS.hour < 4) {
+    if (GPS.hour >= 0 && GPS.hour < timezone) {
       tzhour = GPS.hour + 20;
     }
     else {
-      tzhour = GPS.hour - 4;
+      tzhour = GPS.hour - timezone;
     }
     if (tzhour < 10) {
       display.print("0");
@@ -345,10 +354,13 @@ void loop() {
     }
     display.print(GPS.month, DEC);
     display.print("/");
-    if (GPS.day < 10) {
-      display.print("0");
-    }
-    display.print(GPS.day, DEC);
+   if (tzhour >= 20 || tzhour == 0) {
+        tzday = GPS.day - 1;
+      }
+      if (tzday < 10) {
+        display.print("0");
+      }
+      display.print(tzday, DEC);
     display.print("/");
     display.print("20");
     display.print(GPS.year, DEC);
