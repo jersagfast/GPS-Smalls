@@ -18,7 +18,7 @@
 #define OLED_DC 4
 #define OLED_CS 2
 #define OLED_CLK 5
-#define OLED_MOSI 6
+#define OLED_MOSI 6 // or "data" on the SSD1306
 #define OLED_RESET 3
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -28,30 +28,31 @@ Adafruit_SSD1306 display(OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 #define LOGO16_GLCD_WIDTH  16 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(8, 9);
+SoftwareSerial mySerial(8, 9); // soft serial on pins 8 & 9
 #define GPSECHO  true
 Adafruit_GPS GPS(&mySerial);
 boolean usingInterrupt = false;
-int mode = 0;
-int left = A5;
-int mid = A3;
-int right = A4;
-int power = 0;
-int tzhour;
-int tzday;
-int fixflag = 0;
+int mode = 0; // used to select what screen we draw
+int left = A5; // left or top button
+int mid = A3; // middle button
+int right = A4; // right or bottom button
+int power = 0; // power flag
+int tzhour; // time zone adjusted hour
+int tzday; // time zone adjusted day
+int fixflag = 0; // if the GPS has a fix or not
 int timezone = 5; // enter the time zone! (EST = 5);
 int dst = 1; // Is it daylight savings time? 0 for no, 1 for yes.
+float maxspeed;
 
 void setup() {
   if (dst == 1) {
     timezone--;
   }
-  pinMode(13, OUTPUT);
-  pinMode(A0, OUTPUT);
-  digitalWrite(A0, HIGH);
-  pinMode(7, OUTPUT);
-  digitalWrite(7, HIGH);
+  pinMode(13, OUTPUT); // LED for button presses
+  pinMode(A0, OUTPUT); // connected to the GPS "enabled" pin
+  digitalWrite(A0, HIGH); // pull it high! Low is sleep
+  pinMode(7, OUTPUT); // This is connected to the VIN of the OLED screen
+  digitalWrite(7, HIGH); // turn the screen on!
   pinMode(left, INPUT);
   pinMode(mid, INPUT);
   pinMode(right, INPUT);
@@ -99,7 +100,10 @@ uint32_t timer = millis();
 
 void loop() {
   if (digitalRead(mid) == LOW) {
-    if (mode == 5) {
+    if (mode == 7) {
+      maxspeed = 0;
+    }
+    if (mode == 8) {
       power++;
       if (power == 2) {
         power = 0;
@@ -136,11 +140,11 @@ void loop() {
   }
 
   if (digitalRead(left) == LOW) {
-    if (mode == 5) {
+    if (mode == 8) {
       return;
     }
     mode++;
-    if (mode == 5) {
+    if (mode == 8) {
       display.clearDisplay();
       display.setTextSize(2);
       display.setTextColor(WHITE);
@@ -196,8 +200,11 @@ void loop() {
   }
 
   if (timer > millis())  timer = millis();
+  if ((GPS.speed * 1.150779) > maxspeed) {
+    maxspeed = GPS.speed * 1.150779;
+  }
 
-  if (millis() - timer > 1000) {
+  if (millis() - timer > 500) {
     timer = millis(); // reset the timer
 
     if (mode == 0) {
@@ -234,9 +241,9 @@ void loop() {
       if (tzhour >= 20) {
         tzday = GPS.day - 1;
       }
-      else {tzday = GPS.day;
+      else {
+        tzday = GPS.day;
       }
-      
       if (tzday < 10) {
         display.print("0");
       }
@@ -247,6 +254,7 @@ void loop() {
       display.display();
 
       if (GPS.fix == 0) {
+        display.fillRect(0, 16, 127, 16, BLACK);
         display.setTextSize(1);
         display.setCursor(0, 16);
         display.print("Acquiring Satellites!");
@@ -264,7 +272,7 @@ void loop() {
         display.print(GPS.longitude, 4);
         display.setCursor(0, 24);
         display.print("Alt:");
-        display.print(GPS.altitude);
+        display.print(GPS.altitude * 3.28084);
         display.setCursor(92, 24);
         if (GPS.fix == 1) {
           display.print("Fix:");
@@ -295,15 +303,17 @@ void loop() {
         display.print(GPS.longitude, 4);
         display.setCursor(0, 16);
         display.print("Speed(MPH):");
-        display.print(GPS.speed * 1.15); //*converts to MPH
+        display.print(GPS.speed * 1.150779); //*converts to MPH
         display.setCursor(0, 24);
         display.print("Bearing:");
         display.print(GPS.angle);
+        display.setCursor(90, 24);
+        display.print("Fix:");
+        display.print(GPS.satellites);
       }
       display.display();
     }
-
-  }
+    
   if (mode == 3) {
     display.clearDisplay();
     display.setTextSize(4);
@@ -360,7 +370,8 @@ void loop() {
    if (tzhour >= 20) {
         tzday = GPS.day - 1;
       }
-      else {tzday = GPS.day;
+      else {
+        tzday = GPS.day;
       }
       if (tzday < 10) {
         display.print("0");
@@ -377,14 +388,14 @@ void loop() {
     display.setTextSize(2);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
-    display.print(GPS.speed * 1.15);
+    display.print(GPS.speed * 1.150779);
     display.print(" MPH");
     display.setCursor(0, 16);
     display.print(GPS.angle);
     display.print(" DEG");
     display.display();
   }
-  if (mode == 5) {
+  if (mode == 8) {
     display.clearDisplay();
     display.setTextSize(2);
     display.setTextColor(WHITE);
@@ -394,5 +405,97 @@ void loop() {
     display.print(" Really?");
     display.display();
   }
-}
+  if (mode == 5) {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.print(GPS.speed * 1.150779);
+    display.print(" MPH");
+    display.setCursor(0, 16);
+    display.print(GPS.altitude * 3.28084);
+    display.print("Ft");
+    display.display();
+  }
+    
+    if (mode == 7) {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.print("Max Speed");
+    display.setCursor(0, 16);
+    display.print(maxspeed);
+    display.print("MPH");
+    display.display();
+  }
+  if (mode == 6) {
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.setTextSize(1);
+        display.setTextSize(1);
+        display.setCursor(0, 0);
+        if (GPS.hour >= 0 && GPS.hour < timezone) {
+        tzhour = GPS.hour + 20;
+      }
+      else {
+        tzhour = GPS.hour - timezone;
+      }
+      if (tzhour < 10) {
+        display.print("0");
+      }
+      display.print(tzhour, DEC); 
+      display.print(':');
+      if (GPS.minute < 10) {
+        display.print("0");
+      }
+      display.print(GPS.minute, DEC); 
+      display.print(':');
+      if (GPS.seconds < 10) {
+        display.print("0");
+      }
+      display.print(GPS.seconds, DEC);    
 
+      display.print("   ");
+      if (GPS.month < 10) {
+        display.print("0");
+      }
+      display.print(GPS.month, DEC);
+      display.print("/");
+      if (tzhour >= 20) {
+        tzday = GPS.day - 1;
+      }
+      else {
+        tzday = GPS.day;
+      }
+      if (tzday < 10) {
+        display.print("0");
+      }
+      display.print(tzday, DEC);
+      display.print("/");
+      display.print("20");
+      display.print(GPS.year, DEC);
+        display.setCursor(0, 8);
+        display.print("Speed(MPH):");
+        display.print(GPS.speed * 1.150779); //*converts to MPH
+        display.setCursor(0, 16);
+        display.print("Alt:");
+        display.print(GPS.altitude * 3.28084);
+        display.setCursor(0, 24);
+        display.print("Bearing:");
+        display.print(GPS.angle);
+        display.setCursor(90, 24);
+        display.print("Fix:");
+        display.print(GPS.satellites);
+  }
+  /*
+      else {
+        display.fillRect(0, 16, 127, 16, BLACK);
+        display.setTextSize(1);
+        display.setCursor(0, 16);
+        display.print("Acquiring Satellites!");
+      }
+      */
+      display.display();
+    }
+}
