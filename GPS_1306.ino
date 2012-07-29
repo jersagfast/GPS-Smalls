@@ -43,6 +43,7 @@ int fixflag = 0; // if the GPS has a fix or not
 int timezone = 5; // enter the time zone! (EST = 5);
 int dst = 1; // Is it daylight savings time? 0 for no, 1 for yes.
 float maxspeed;
+float maxalt;
 
 void setup() {
   if (dst == 1) {
@@ -101,9 +102,12 @@ uint32_t timer = millis();
 void loop() {
   if (digitalRead(mid) == LOW) {
     if (mode == 7) {
-      maxspeed = 0;
+      maxspeed = GPS.speed * 1.150779;
     }
     if (mode == 8) {
+      maxalt = GPS.altitude;
+    }
+    if (mode == 9) {
       power++;
       if (power == 2) {
         power = 0;
@@ -140,11 +144,11 @@ void loop() {
   }
 
   if (digitalRead(left) == LOW) {
-    if (mode == 8) {
+    if (mode == 9) {
       return;
     }
     mode++;
-    if (mode == 8) {
+    if (mode == 9) {
       display.clearDisplay();
       display.setTextSize(2);
       display.setTextColor(WHITE);
@@ -202,6 +206,9 @@ void loop() {
   if (timer > millis())  timer = millis();
   if ((GPS.speed * 1.150779) > maxspeed) {
     maxspeed = GPS.speed * 1.150779;
+  }
+  if (GPS.altitude > maxalt) {
+    maxalt = GPS.altitude;
   }
 
   if (millis() - timer > 500) {
@@ -395,7 +402,7 @@ void loop() {
     display.print(" DEG");
     display.display();
   }
-  if (mode == 8) {
+  if (mode == 9) {
     display.clearDisplay();
     display.setTextSize(2);
     display.setTextColor(WHITE);
@@ -427,6 +434,16 @@ void loop() {
     display.setCursor(0, 16);
     display.print(maxspeed);
     display.print("MPH");
+    display.display();
+  }
+  if (mode == 8) {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+    display.print("Max Alt-Ft");
+    display.setCursor(0, 16);
+    display.print(maxalt);
     display.display();
   }
   if (mode == 6) {
