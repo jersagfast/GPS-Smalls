@@ -14,7 +14,7 @@
 // Also pick up an OLED Display at the Adafruit sore!
 //    ------> http://www.adafruit.com/products/661
 // Sketch by Jeremy Saglimbeni - 07/14/12
-//    ------> http://thecustomgeek.com/2012/07/14/really-smalls-gps/
+//    ------> http://thecustomgeek.com/2012/07/15/really-smalls-gps/
 #define OLED_DC 4
 #define OLED_CS 2
 #define OLED_CLK 5
